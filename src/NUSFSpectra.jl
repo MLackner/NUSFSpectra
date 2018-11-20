@@ -1,7 +1,17 @@
 module NUSFSpectra
 
 using Dates, PyCall, JLD2, FileIO, DelimitedFiles
-push!(pyimport("sys")["path"], joinpath(@__DIR__, "pySfgProcess/"))
+
+function __init__()
+    push!(pyimport("sys")["path"], joinpath(@__DIR__, "../pythonmodules/pySfgProcess/"))
+    global dfg = pyimport("dfg")
+    global pscalib = pyimport("pscalib")
+    global spectrum = pyimport("spectrum")
+    global winspec = pyimport("winspec")
+end
+
+@show dfg
+@show winspec
 
 mutable struct NUSFSpectrum{T<:Number,N} <: AbstractArray{T,N}
     s::Array{T,N}
@@ -141,10 +151,10 @@ end
 function processgold(path, calibrationfile; trunc=1e-6, doplot=false)
 
     calib = load(calibrationfile, "calib")
-    @show path
+    path
     # get all the .SPE files
-    @show filenames = filter!(x -> splitext(x)[2] == ".SPE", readdir(path))
-    @show filepaths = joinpath.(path, filenames)
+    filenames = filter!(x -> splitext(x)[2] == ".SPE", readdir(path))
+    filepaths = joinpath.(path, filenames)
 
     #get datetime of the files
     datetimes = Array{DateTime}(undef, length(filepaths))
