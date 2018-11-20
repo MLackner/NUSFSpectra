@@ -2,6 +2,8 @@ module NUSFSpectra
 
 using Dates, PyCall, JLD2, FileIO, DelimitedFiles
 
+import Base: *, -, +, /
+
 function __init__()
     push!(pyimport("sys")["path"], joinpath(@__DIR__, "../pythonmodules/pySfgProcess/"))
     global dfg = pyimport("dfg")
@@ -10,8 +12,6 @@ function __init__()
     global winspec = pyimport("winspec")
 end
 
-@show dfg
-@show winspec
 
 mutable struct NUSFSpectrum{T<:Number,N} <: AbstractArray{T,N}
     s::Array{T,N}
@@ -64,21 +64,12 @@ Base.convert(T::Array{Number}, s::NUSFSpectrum) = s.s |> T
 /(a::Number, s::NUSFSpectrum)     = a ./ s.s
 
 
-function Base.show(io::IO, s::NUSFSpectrum)
-    ndims(s) == 2 && print("$(size(s)[1])×$(size(s)[2]) ")
-    ndims(s) == 1 && print("$(size(s)[1]) ")
-    println("$(typeof(s))")
-    println("$(s.name) - $(s.date)")
-end
-
 
 function calibrate(filepath, peak1=(2825, 2860), peak2=(3045, 3070))
     calibfile = filepath
 
-    ps = pscalib.PScalib(calibfile)
+    ps = pscalib[:PScalib](calibfile)
     ps[:plot]()
-    p = gcf()
-    # vlines(peak1..., ylim()...)
 
     #starting and ending values of segment to fit
     val1 = peak1[1]
@@ -159,13 +150,13 @@ function processgold(path, calibrationfile; trunc=1e-6, doplot=false)
     #get datetime of the files
     datetimes = Array{DateTime}(undef, length(filepaths))
     for i = 1:length(filepaths)
-        f = winspec.SpeFile(filepaths[i])
+        f = winspec[:SpeFile](filepaths[i])
         datetimestr = f[:header][:date] * f[:header][:ExperimentTimeLocal]
         datetimes[i] = DateTime(datetimestr, dateformat"dduuuyyyyHHMMSS")
     end
 
     #create object, loads each sample and background DFG
-    gold = spectrum.Spectrum(path, shift=calib)
+    gold = spectrum[:Spectrum](path, shift=calib)
 
     #subtract the appropriate background DFG from each sample DFG
     gold[:subtractBGs]()
