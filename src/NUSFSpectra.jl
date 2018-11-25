@@ -122,7 +122,14 @@ function batchprocess(path, calibfile=joinpath(path, "calibration.jld2");
             dates[i] = specinfo[2][1]
             pyobjs[i] = specinfo[3]
         end
+
         name = split(p[1], "/")[end-1]
+
+        ## Order spectra by date
+        i = sortperm(dates)
+        pyobjs = pyobjs[i]
+        dates = dates[i]
+
         push!(specs, NUSFSpectrum(pyobjs, name, dates))
     end
 
